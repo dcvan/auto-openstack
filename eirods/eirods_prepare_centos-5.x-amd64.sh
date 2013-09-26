@@ -15,8 +15,8 @@ is_installed(){
 
 }
 
-if [ ! "$(grep "Red Hat 4.1.2" /proc/version)" ];then
-	echo "This script is for CentOS 5.x or RHEL 5.x"
+if [ ! "$(grep "CentOS" /etc/redhat-release|egrep "5\.[0-9]{1}")" ];then
+	echo "This script is for CentOS 5.x."
 	echo "Exit."
 	exit 1
 fi
