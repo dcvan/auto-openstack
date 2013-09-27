@@ -15,8 +15,9 @@ is_installed(){
 		echo "Installation failed."
 		exit 1
 	fi
+		PKG_SEARCH_RESULT=$(echo $PKG_SEARCH_RESULT|awk '{print $1}')
 		echo "$PKG_SEARCH_RESULT is found in the repo."
-		DEP_PKGS="$DEP_PKGS $(echo $PKG_SEARCH_RESULT|awk '{print $1}')"
+		DEP_PKGS="$DEP_PKGS $PKG_SEARCH_RESULT"
 
 }
 
