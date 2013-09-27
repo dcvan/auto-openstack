@@ -11,10 +11,11 @@ is_installed(){
 	PKG_NAME=$(echo $1|cut -d'.' -f1)
 	PKG_SEARCH_RESULT=$(yum search $PKG_NAME|grep "^$1")
 	if [  "$(echo $PKG_SEARCH_RESULT|grep "No matches found")" ];then
-		echo "$1 not found in repository. Check your yum repository."
+		echo "$1 not found in yum repo. Check your yum repo."
 		echo "Installation failed."
 		exit 1
 	fi
+		echo "$PKG_SEARCH_RESULT is found in the repo."
 		DEP_PKGS="$DEP_PKGS $(echo $PKG_SEARCH_RESULT|awk '{print $1}')"
 
 }
@@ -62,16 +63,22 @@ is_installed postgresql-server.x86_64
 is_installed postgresql.x86_64
 is_installed postgresql-odbc.x86_64
 
+DEP_PKGS=$(echo $DEP_PKGS|sed "s/^ //g")
 if [ "$DEP_PKGS" ];then
 	echo "$DEP_PKGS will be installed."
 	yum install -y $DEP_PKGS
 fi
 
-echo "Changing /etc/xinetd.d/auth and restart xinetd."
+echo "Change /etc/xinetd.d/auth and start xinetd..."
 sed -i "s/--os -E/--os/g" /etc/xinetd.d/auth
 /sbin/chkconfig --level=3 auth on
-/etc/init.d/xinetd restart
+if [ ! "$(/sbin/service xinetd status|grep running)" ];then
+	/etc/init.d/xinetd start
+else
+	echo "Xinetd is running."
+fi
  
+echo "Initialize and start PostgreSQL..."
 if [ ! "$(/sbin/service postgresql status|grep running)" ];then
 	/etc/init.d/postgresql start
 else
@@ -79,10 +86,18 @@ else
 fi
 
 if ! [ -a $ICAT_PATH ];then
+	echo "Download eirods iCAT installation package..."
 	mkdir -p /root/build
 	wget $ICAT_DOWNLOAD -P /root/build
 fi
-rpm -i /root/build/eirods-3.0-64bit-icat-postgres-redhat.rpm
+
+if [ -a $ICAT_PATH ];then
+	rpm -i /root/build/eirods-3.0-64bit-icat-postgres-redhat.rpm
+else
+	echo "iCAT installation package not found.Exit."
+	echo "Installation failed."
+	exit 1
+fi
 
 echo "Completed!"
 su eirods
